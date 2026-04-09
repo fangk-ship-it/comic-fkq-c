@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>臺漫灶腳 - 幸福與記憶的味道</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wood-dark: #3E2723;
+            --wood-light: #5D4037;
+            --paper: #F5F2E9;
+            --manga-ink: #1a1a1a;
+        }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--paper);
+            user-select: none;
+            overflow: hidden;
+            color: var(--manga-ink);
+        }
+
+        .manga-bg {
+            background-image: radial-gradient(var(--manga-ink) 1px, transparent 1px);
+            background-size: 4px 4px;
+            opacity: 0.05;
+        }
+
+        .library-shelf {
+            background: linear-gradient(90deg, var(--wood-dark) 0%, var(--wood-light) 50%, var(--wood-dark) 100%);
+            box-shadow: inset 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .book-spine {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-left: 2px solid rgba(255,255,255,0.2);
+            border-right: 4px solid rgba(0,0,0,0.4);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        .book-spine:hover {
+            transform: translateY(-25px) rotate(-1deg);
+            z-index: 50;
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: #fff;
+            border: 4px solid #000;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            filter: drop-shadow(6px 6px 0px #000);
+        }
+
+        input[type=range].vertical-range {
+            writing-mode: bt-lr;
+            appearance: slider-vertical;
+            width: 12px;
+            height: 200px;
+            cursor: pointer;
+        }
+
+        @keyframes action-flash {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.5) rotate(10deg); }
+        }
+        .action-effect {
+            position: absolute;
+            pointer-events: none;
+            animation: action-flash 0.3s forwards;
+            font-weight: 900;
+            font-style: italic;
+            color: black;
+            font-size: 2rem;
+            z-index: 200;
+        }
+
+        .hidden { display: none !important; }
+        
+        .cracked-texture {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3Basepath d='M0 20 L30 10 L50 40 L80 30 L100 50 M20 100 L40 70 L70 90 L90 60' stroke='black' stroke-width='0.5' fill='none'/%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container" class="h-screen w-full flex flex-col relative overflow-hidden">
+        
+        <!-- 入口畫面 -->
+        <div id="scene-intro" class="h-full flex flex-col items-center justify-center space-y-8 p-6 bg-white relative">
+            <div class="manga-bg absolute inset-0"></div>
+            <div class="relative z-10 border-[6px] border-black p-12 bg-white rotate-[-1deg] shadow-[15px_15px_0px_0px_rgba(0,0,0,1)] text-center">
+                <h1 class="text-8xl font-[Noto+Serif+TC] font-black italic tracking-tighter">臺漫灶腳</h1>
+                <p class="mt-6 text-xl font-bold text-stone-600 tracking-[0.3em]">複刻漫畫中溫暖人心的經典滋味</p>
+            </div>
+            <button onclick="changeScene('shelf')" class="relative z-10 group mt-10">
+                <div class="absolute inset-0 bg-black translate-x-2 translate-y-2 transition-transform group-hover:translate-x-1 group-hover:translate-y-1"></div>
+                <div class="relative bg-red-600 text-white px-16 py-5 text-2xl font-black border-4 border-black">翻開記憶錄</div>
+            </button>
+        </div>
+
+        <!-- 圖書館書架 -->
+        <div id="scene-shelf" class="hidden h-full library-shelf flex flex-col p-12">
+            <header class="flex justify-between items-end mb-16 text-white border-b-2 border-white/20 pb-4">
+                <div>
+                    <h2 class="text-6xl font-black italic">漫畫經典選藏</h2>
+                    <p class="mt-2 text-stone-300">選擇一個故事，進入記憶中的灶腳</p>
+                </div>
+                <button onclick="changeScene('intro')" class="bg-white text-black px-8 py-2 font-black border-4 border-black shadow-[4px_4px_0px_0px_black]">返回</button>
+            </header>
+            
+            <div class="flex-1 flex flex-col justify-center">
+                <div id="book-row" class="flex items-end justify-center space-x-2 h-96"></div>
+                <div class="w-full h-6 bg-[#2D1B18] border-b-4 border-black shadow-2xl mt-[-4px]"></div>
+            </div>
+        </div>
+
+        <!-- 互動廚房 -->
+        <div id="scene-kitchen" class="hidden h-full flex flex-col bg-[#F0F0F0]">
+            <div class="bg-black text-white p-6 flex justify-between items-center z-50 border-b-4 border-red-600">
+                <div class="flex items-center space-x-6">
+                    <button onclick="changeScene('shelf')" class="text-2xl hover:scale-110">✕</button>
+                    <div>
+                        <h3 id="k-food-name" class="text-3xl font-black italic"></h3>
+                        <p id="k-step-info" class="text-sm text-red-500 font-bold uppercase tracking-widest"></p>
+                    </div>
+                </div>
+                
+                <div class="flex-1 max-w-xl mx-12">
+                    <div class="flex justify-between items-end mb-2">
+                        <span id="control-label" class="text-xs font-bold uppercase">PROCESS</span>
+                        <span id="timer-text" class="text-2xl font-black font-mono">00:00</span>
+                    </div>
+                    <div class="h-4 bg-stone-800 border-2 border-white p-0.5">
+                        <div id="timer-fill" class="h-full bg-yellow-400 w-full transition-all"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex overflow-hidden relative">
+                <div class="manga-bg absolute inset-0"></div>
+
+                <div id="control-panel" class="w-28 bg-stone-100 border-r-4 border-black flex flex-col items-center py-12 z-10">
+                    <div id="slider-title" class="mb-4 font-black text-sm rotate-[-90deg]">INTENSITY</div>
+                    <div class="relative h-72 w-10 bg-gradient-to-t from-blue-400 via-green-400 to-red-500 rounded-lg border-4 border-black overflow-hidden shadow-inner">
+                        <div id="heat-target" class="absolute w-full bg-white/50 border-y-2 border-black/30"></div>
+                        <input type="range" id="heat-slider" min="0" max="100" value="30" class="vertical-range absolute inset-0 accent-black">
+                    </div>
+                    <div id="heat-label" class="mt-6 px-3 py-1 bg-black text-white text-xs font-bold rounded">適中</div>
+                </div>
+
+                <div class="flex-1 flex flex-col items-center justify-center p-8 relative">
+                    <div id="interaction-zone" class="relative w-[500px] h-[400px] flex items-center justify-center cursor-pointer">
+                        <div class="absolute inset-0 bg-white border-[6px] border-black shadow-[20px_20px_0px_0px_rgba(0,0,0,0.1)] rotate-1"></div>
+                        <div id="visual-content" class="relative z-10 text-9xl select-none flex items-center justify-center w-full h-full"></div>
+                        <div id="overlay-texture" class="absolute inset-0 pointer-events-none cracked-texture hidden"></div>
+                    </div>
+
+                    <div class="mt-12 bg-white border-4 border-black p-6 w-full max-w-md shadow-[8px_8px_0px_0px_black] rotate-[-1deg]">
+                        <p id="step-hint" class="text-xl font-black italic text-center"></p>
+                        <div class="mt-4 h-3 bg-stone-100 border-2 border-black overflow-hidden">
+                            <div id="progress-bar" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結算畫面 -->
+        <div id="result-overlay" class="hidden absolute inset-0 z-[100] flex items-center justify-center bg-black/95 p-4">
+            <div class="bg-white border-[8px] border-black max-w-5xl w-full flex flex-col md:flex-row rotate-1 overflow-hidden">
+                <div class="w-full md:w-2/5 p-4 bg-stone-50 border-b-4 md:border-b-0 md:border-r-4 border-black">
+                    <div class="relative">
+                        <img id="res-img" class="w-full aspect-square object-cover border-4 border-black shadow-lg" src="">
+                        <div class="absolute -bottom-4 -right-4 bg-yellow-400 border-4 border-black px-4 py-2 font-black italic">MEMORABLE FLAVOR</div>
+                    </div>
+                    <h2 id="res-name" class="text-5xl font-black mt-8 italic underline decoration-yellow-400"></h2>
+                    <p id="res-tags" class="text-sm font-bold mt-4 text-stone-400"></p>
+                </div>
+                <div class="w-full md:w-3/5 p-8 flex flex-col bg-white">
+                    <div class="speech-bubble mb-8">
+                        <p id="res-quote" class="font-black italic text-xl leading-relaxed"></p>
+                    </div>
+                    <div class="flex-1 space-y-6 overflow-y-auto pr-4">
+                        <div>
+                            <span class="bg-black text-white px-3 py-1 text-xs font-black">ORIGIN STORY</span>
+                            <p id="res-source" class="text-2xl font-black mt-2 text-red-600"></p>
+                        </div>
+                        <div class="border-l-4 border-stone-200 pl-4">
+                            <p id="res-culture" class="text-stone-600 text-base leading-relaxed font-bold"></p>
+                        </div>
+                    </div>
+                    <div class="mt-10 flex gap-4">
+                        <button onclick="changeScene('shelf')" class="flex-1 py-4 border-4 border-black font-black text-xl hover:bg-black hover:text-white transition-all">收藏記憶</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DATABASE = [
+            {
+                id: 'tea-egg',
+                name: '幸福茶葉蛋',
+                source: '《幸福調味料》：平凡的陪伴',
+                tags: '#中藥與茶香的交織 #平凡卻深遠的幸福',
+                quote: '「蛋殼上的裂縫，是讓味道進去的路徑。就像人生，經歷過磨練，香味才會深入靈魂。」',
+                culture: '茶葉蛋是臺灣最普及的國民點心，在阮光民的《幸福調味料》中，它代表的是一種溫柔的陪伴。透過敲裂蛋殼的過程，讓中藥、醬油與茶葉的香氣在細火慢熬中滲透。那深褐色的琥珀紋理，正是時間與心意交織而成的幸福調味料。',
+                idealHeat: [30, 60],
+                timeLimit: 40,
+                photo: 'https://images.unsplash.com/photo-1590080876351-941da357636e?q=80&w=1000&auto=format&fit=crop',
+                color: '#6D4C41',
+                steps: [
+                    { id: 'crack', name: '輕敲出記憶裂縫', visual: '🥚', target: 20, type: 'tap', onom: '喀！', hint: '點擊蛋殼！輕輕敲出均勻的裂痕', control: 'TAP FORCE' },
+                    { id: 'braise', name: '細火熬煮茶香', visual: '🍵', target: 20, type: 'hold', onom: '香—', hint: '按住畫面維持溫火，讓茶湯滲入蛋芯', control: 'HEAT LEVEL' }
+                ]
+            },
+            {
+                id: 'aiyu',
+                name: '手洗愛玉',
+                source: '《友繪的小梅屋記事簿》：夏日涼沁',
+                tags: '#世界唯一臺灣特有種 #日治時期的消暑點心',
+                quote: '「這種透明的果凍，竟然是從種子裡揉出來的？這就是臺灣夏天的味道嗎？」',
+                culture: '愛玉是臺灣特有種。在《友繪的小梅屋記事簿》中，這種天然凝膠是日治背景下受不同背景人們共同喜愛的甜點。透過雙手揉搓愛玉籽釋放果膠，那是大自然最溫潤的饋贈，也是當時最流行的時髦點心。',
+                idealHeat: [20, 50],
+                timeLimit: 45,
+                photo: 'https://images.unsplash.com/photo-1582760827937-34744bc4aa4f?q=80&w=1000&auto=format&fit=crop',
+                color: '#FBC02D',
+                steps: [
+                    { id: 'rub', name: '揉搓愛玉籽', visual: '🍋', target: 40, type: 'circle', onom: '搓—', hint: '在水中畫圓揉搓，感受果膠的釋放', control: 'RUB FORCE' },
+                    { id: 'set', name: '靜置凝固成凍', visual: '🥣', target: 15, type: 'hold', onom: '靜...', hint: '維持穩定，讓透明的膠質慢慢結凍', control: 'STEADY' }
+                ]
+            },
+            {
+                id: 'melon-pork',
+                name: '宜蘭瓜仔肉',
+                source: '《手路菜》：傳承的脆瓜',
+                tags: '#宜蘭味 #對抗遺忘的母愛',
+                quote: '「媽，妳醃的脆瓜都在這。妳忘了我沒關係，我會把這味道一直留著。」',
+                culture: '在《手路菜》中，宜蘭的雨水與脆瓜是故事的背景。瓜仔肉不只是下飯菜，更是兒子試圖喚醒失智母親記憶的鎖頭。鹹甜交織的味道，承載了家庭與土地的深厚連結。',
+                idealHeat: [50, 80],
+                timeLimit: 35,
+                photo: 'https://images.unsplash.com/photo-1512058560366-cd2429ff5c7c?q=80&w=1000&auto=format&fit=crop',
+                color: '#795548',
+                steps: [
+                    { id: 'chop', name: '剁碎脆瓜與鮮肉', visual: '🥒', target: 30, type: 'slash', onom: '叩！', hint: '快速滑動剁碎！將脆瓜與絞肉完美融合', control: 'SPEED' },
+                    { id: 'steam', name: '大火炊煮鮮甜', visual: '🍲', target: 20, type: 'hold', onom: '騰—', hint: '按住維持大火，鎖住肉汁與瓜香', control: 'FIRE' }
+                ]
+            }
+        ];
+
+        let state = {
+            activeFood: null,
+            stepIdx: 0,
+            progress: 0,
+            timeLeft: 0,
+            heat: 30,
+            isPlaying: false,
+            timer: null,
+            lastX: 0
+        };
+
+        function init() {
+            const row = document.getElementById('book-row');
+            DATABASE.forEach(food => {
+                const book = document.createElement('div');
+                book.className = 'book-spine w-14 h-80 flex items-center justify-between py-6 px-3 text-white font-black text-2xl border-4 border-black';
+                book.style.backgroundColor = food.color;
+                book.innerHTML = `<span class="tracking-widest">${food.name}</span> <span class="text-[10px] opacity-60 mt-4">${food.source.split('：')[0]}</span>`;
+                book.onclick = () => startGame(food);
+                row.appendChild(book);
+            });
+            setupHandlers();
+        }
+
+        function changeScene(scene) {
+            document.querySelectorAll('#game-container > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById(`scene-${scene}`).classList.remove('hidden');
+            if (scene !== 'kitchen') stopGame();
+        }
+
+        function startGame(food) {
+            state.activeFood = food;
+            state.stepIdx = 0;
+            state.progress = 0;
+            state.timeLeft = food.timeLimit;
+            state.heat = 30;
+            state.isPlaying = true;
+            document.getElementById('result-overlay').classList.add('hidden');
+            document.getElementById('heat-slider').value = 30;
+            loadStep();
+            changeScene('kitchen');
+            startLoop();
+        }
+
+        function loadStep() {
+            const step = state.activeFood.steps[state.stepIdx];
+            document.getElementById('k-food-name').innerText = state.activeFood.name;
+            document.getElementById('k-step-info').innerText = `STEP ${state.stepIdx+1}: ${step.name}`;
+            document.getElementById('step-hint').innerText = step.hint;
+            document.getElementById('visual-content').innerText = step.visual;
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('control-label').innerText = step.control;
+            document.getElementById('slider-title').innerText = step.control;
+            
+            const zone = document.getElementById('heat-target');
+            const [min, max] = state.activeFood.idealHeat;
+            zone.style.bottom = `${min}%`;
+            zone.style.height = `${max - min}%`;
+
+            // 茶葉蛋特殊紋理
+            if (state.activeFood.id === 'tea-egg' && step.id === 'crack') {
+                document.getElementById('overlay-texture').classList.remove('hidden');
+            } else {
+                document.getElementById('overlay-texture').classList.add('hidden');
+            }
+        }
+
+        function startLoop() {
+            if (state.timer) clearInterval(state.timer);
+            state.timer = setInterval(() => {
+                if (!state.isPlaying) return;
+                state.timeLeft -= 0.1;
+                const ratio = (state.timeLeft / state.activeFood.timeLimit) * 100;
+                document.getElementById('timer-fill').style.width = `${ratio}%`;
+                document.getElementById('timer-text').innerText = `00:${Math.max(0, Math.ceil(state.timeLeft)).toString().padStart(2, '0')}`;
+                
+                if (state.timeLeft <= 0) endGame(false, "時間流逝了，這份味道淡去了...");
+
+                const [min, max] = state.activeFood.idealHeat;
+                const label = document.getElementById('heat-label');
+                if (state.heat < min) label.innerText = "力道不足";
+                else if (state.heat > max) label.innerText = "力道過猛！";
+                else label.innerText = "恰到好處";
+            }, 100);
+        }
+
+        function stopGame() {
+            state.isPlaying = false;
+            clearInterval(state.timer);
+        }
+
+        function addProgress(val) {
+            const [min, max] = state.activeFood.idealHeat;
+            const efficiency = (state.heat >= min && state.heat <= max) ? 1.5 : 0.5;
+            state.progress += val * efficiency;
+            const step = state.activeFood.steps[state.stepIdx];
+            document.getElementById('progress-bar').style.width = `${Math.min(100, (state.progress / step.target) * 100)}%`;
+            
+            if (state.progress >= step.target) {
+                if (state.stepIdx < state.activeFood.steps.length - 1) {
+                    state.stepIdx++;
+                    state.progress = 0;
+                    loadStep();
+                } else endGame(true);
+            }
+        }
+
+        function endGame(success, msg) {
+            stopGame();
+            if (!success) {
+                const box = document.createElement('div');
+                box.className = "fixed inset-0 z-[300] flex items-center justify-center bg-black/80";
+                box.innerHTML = `<div class="bg-white border-4 border-black p-8 text-center"><p class="text-2xl font-black mb-6">${msg}</p><button onclick="location.reload()" class="bg-black text-white px-8 py-2 font-black">重新回憶</button></div>`;
+                document.body.appendChild(box);
+                return;
+            }
+            const food = state.activeFood;
+            document.getElementById('result-overlay').classList.remove('hidden');
+            document.getElementById('res-img').src = food.photo;
+            document.getElementById('res-name').innerText = food.name;
+            document.getElementById('res-tags').innerText = food.tags;
+            document.getElementById('res-quote').innerText = food.quote;
+            document.getElementById('res-source').innerText = food.source;
+            document.getElementById('res-culture').innerText = food.culture;
+        }
+
+        function setupHandlers() {
+            const zone = document.getElementById('interaction-zone');
+            let isDown = false;
+            
+            zone.addEventListener('pointerdown', (e) => {
+                isDown = true;
+                const step = state.activeFood.steps[state.stepIdx];
+                if (step.type === 'tap') {
+                    addProgress(2.5);
+                    createEffect(step.onom, e.clientX, e.clientY);
+                    if (state.activeFood.id === 'tea-egg') {
+                        document.getElementById('overlay-texture').style.opacity = (state.progress / step.target);
+                    }
+                } else if (step.type === 'hold') {
+                    addProgress(0.5);
+                }
+            });
+
+            window.addEventListener('pointerup', () => isDown = false);
+
+            zone.addEventListener('pointermove', (e) => {
+                if (!isDown || !state.isPlaying) return;
+                const step = state.activeFood.steps[state.stepIdx];
+                if (step.type === 'slash' || step.type === 'circle') {
+                    addProgress(0.8);
+                    if (Math.random() > 0.8) createEffect(step.onom, e.clientX, e.clientY);
+                }
+            });
+
+            document.getElementById('heat-slider').oninput = (e) => {
+                state.heat = parseInt(e.target.value);
+            };
+        }
+
+        function createEffect(txt, x, y) {
+            const el = document.createElement('div');
+            el.className = 'action-effect';
+            el.style.left = x + 'px'; 
+            el.style.top = y + 'px';
+            el.innerText = txt;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 300);
+        }
+
+        init();
+    </script>
+</body>
+</html>
